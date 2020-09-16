@@ -8,7 +8,6 @@
 .Parameter Identity = The Exchange servername like MyMailmonster.
 .Author = Lars Boos
 #>
-function set-exchangeuri {
 $ComputerSystem = [System.Net.Dns]::GetHostByName(($env:computerName))
 $ComputerSystem = $ComputerSystem | Select HostName
 $identity = $env:computername
@@ -20,50 +19,67 @@ param(
     [string]$ExternalURI=$InternalURI,
     [Parameter(Mandatory = $true,ParameterSetName = "Identity of Exchange Server")]
     [string]$Identity,
-    [Parameter(ParameterSetName = "Protection Standard")]
+    [Parameter(ParameterSetName = "External Auth Method")]
     [ValidateSet('Basic', 'NTLM', 'Negotiate')]
     [string]$AuthType="Negotiate"
 )
- 
+
+function set-exchangeuri {
+# Check which version is installed then set a variable
+$exversion = Get-ExchangeServer -Server $identity | AdminDisplayVersion
+# Exchange 2019
+$ex2019 = "Version 15.2"
+# Exchange 2016
+$ex2016 = "Version 15.1"
+# Exchange 2013
+$ex2013 = "Version 15.0"
+# Exchange 2010 SP3
+$ex2010sp3 = "Version 14.3"
+# Exchange 2010
+$ex2010 = "Version 14.2"
+
+if $exversion -like $ex2019 { $exmatch = 5 }  
+if $exversion -like $ex2016 { $exmatch = 4 }
+if $exversion -like $ex2013 { $exmatch = 3 }
+if $exversion -like $ex2010sp3 { $exmatch = 2 }
+if $exversion -like $ex2010 { $exmatch = 1 }
+
 #OWA
 $owain = "https://" + "$InternalURI" + "/owa"
 $owaex = "https://" + "$ExternalURI" + "/owa"
-Get-OwaVirtualDirectory -Server $env:computername | Set-OwaVirtualDirectory -internalurl $owain -externalurl $owaex
+Get-OwaVirtualDirectory -Server $Identity | Set-OwaVirtualDirectory -internalurl $owain -externalurl $owaex
  
 #ECP
 $ecpin = "https://" + "$InternalURI" + "/ecp"
 $ecpex = "https://" + "$ExternalURI" + "/ecp"
-Get-EcpVirtualDirectory -server $env:computername| Set-EcpVirtualDirectory -internalurl $ecpin -externalurl $ecpex
+Get-EcpVirtualDirectory -server $Identity | Set-EcpVirtualDirectory -internalurl $ecpin -externalurl $ecpex
  
 #EWS
 $ewsin = "https://" + "$InternalURI" + "/EWS/Exchange.asmx"
 $ewsex = "https://" + "$ExternalURI" + "/EWS/Exchange.asmx"
-Get-WebServicesVirtualDirectory -server $env:computername | Set-WebServicesVirtualDirectory -internalurl $ewsin -externalurl $ewsex -confirm:$false -force
+Get-WebServicesVirtualDirectory -server $Identity | Set-WebServicesVirtualDirectory -internalurl $ewsin -externalurl $ewsex -confirm:$false -force
  
 #ActiveSync
 $easin = "https://" + "$InternalURI" + "/Microsoft-Server-ActiveSync"
 $easex = "https://" + "$ExternalURI" + "/Microsoft-Server-ActiveSync"
-Get-ActiveSyncVirtualDirectory -Server $env:computername  | Set-ActiveSyncVirtualDirectory -internalurl $easin -externalurl $easex
+Get-ActiveSyncVirtualDirectory -Server $Identity | Set-ActiveSyncVirtualDirectory -internalurl $easin -externalurl $easex
  
 #OfflineAdressbuch
 $oabin = "https://" + "$InternalURI" + "/OAB"
 $oabex = "https://" + "$ExternalURI" + "/OAB"
-
-Get-OabVirtualDirectory -Server $env:computername | Set-OabVirtualDirectory -internalurl $oabin -externalurl $oabex
+Get-OabVirtualDirectory -Server $Identity | Set-OabVirtualDirectory -internalurl $oabin -externalurl $oabex
  
 #MAPIoverHTTP
 $mapiin = "https://" + "$InternalURI" + "/mapi"
 $mapiex = "https://" + "$ExternalURI" + "/mapi"
-Get-MapiVirtualDirectory -Server $env:computername| Set-MapiVirtualDirectory -externalurl $mapiex -internalurl $mapiin
+Get-MapiVirtualDirectory -Server $Identity | Set-MapiVirtualDirectory -externalurl $mapiex -internalurl $mapiin
  
 #Outlook Anywhere (RPCoverhTTP)
-
-Get-OutlookAnywhere -Server $env:computername| Set-OutlookAnywhere -externalhostname $ExternalURI -internalhostname $InternalURI -ExternalClientsRequireSsl:$true -InternalClientsRequireSsl:$true -ExternalClientAuthenticationMethod $AuthType
+Get-OutlookAnywhere -Server $Identity | Set-OutlookAnywhere -externalhostname $ExternalURI -internalhostname $InternalURI -ExternalClientsRequireSsl:$true -InternalClientsRequireSsl:$true -ExternalClientAuthenticationMethod $AuthType
  
 #Autodiscover SCP
 $autodiscover = "https://" + "$InternalURI" + "/Autodiscover/Autodiscover.xml"
-
-Get-ClientAccessService $env:computername | Set-ClientAccessService -AutoDiscoverServiceInternalUri $autodiscover
+Get-ClientAccessService $Identity | Set-ClientAccessService -AutoDiscoverServiceInternalUri $autodiscover
 
 #Output
 write-host "OWA URL:" $owain
