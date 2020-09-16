@@ -38,48 +38,64 @@ $ex2010sp3 = "Version 14.3"
 # Exchange 2010
 $ex2010 = "Version 14.2"
 
-if $exversion -like $ex2019 { $exmatch = 5 }  
-if $exversion -like $ex2016 { $exmatch = 4 }
-if $exversion -like $ex2013 { $exmatch = 3 }
-if $exversion -like $ex2010sp3 { $exmatch = 2 }
-if $exversion -like $ex2010 { $exmatch = 1 }
+if ($exversion -like $ex2019) { $exmatch = 5 }  
+if ($exversion -like $ex2016) { $exmatch = 4 }
+if ($exversion -like $ex2013) { $exmatch = 3 }
+if ($exversion -like $ex2010sp3) { $exmatch = 2 }
+if ($exversion -like $ex2010) { $exmatch = 1 }
 
+if ($exversion -ge 0) {
 #OWA
 $owain = "https://" + "$InternalURI" + "/owa"
 $owaex = "https://" + "$ExternalURI" + "/owa"
 Get-OwaVirtualDirectory -Server $Identity | Set-OwaVirtualDirectory -internalurl $owain -externalurl $owaex
- 
+}
+
+if ($exversion -ge 0) {
 #ECP
 $ecpin = "https://" + "$InternalURI" + "/ecp"
 $ecpex = "https://" + "$ExternalURI" + "/ecp"
 Get-EcpVirtualDirectory -server $Identity | Set-EcpVirtualDirectory -internalurl $ecpin -externalurl $ecpex
- 
+}
+
+if ($exversion -ge 0) {
 #EWS
 $ewsin = "https://" + "$InternalURI" + "/EWS/Exchange.asmx"
 $ewsex = "https://" + "$ExternalURI" + "/EWS/Exchange.asmx"
 Get-WebServicesVirtualDirectory -server $Identity | Set-WebServicesVirtualDirectory -internalurl $ewsin -externalurl $ewsex -confirm:$false -force
- 
+}
+
+if ($exversion -ge 0) {
 #ActiveSync
 $easin = "https://" + "$InternalURI" + "/Microsoft-Server-ActiveSync"
 $easex = "https://" + "$ExternalURI" + "/Microsoft-Server-ActiveSync"
 Get-ActiveSyncVirtualDirectory -Server $Identity | Set-ActiveSyncVirtualDirectory -internalurl $easin -externalurl $easex
- 
-#OfflineAdressbuch
+}
+
+if ($exversion -ge 0) {
+#OfflineAddressbook
 $oabin = "https://" + "$InternalURI" + "/OAB"
 $oabex = "https://" + "$ExternalURI" + "/OAB"
 Get-OabVirtualDirectory -Server $Identity | Set-OabVirtualDirectory -internalurl $oabin -externalurl $oabex
- 
+}
+
+if ($exversion -ge 0) {
 #MAPIoverHTTP
 $mapiin = "https://" + "$InternalURI" + "/mapi"
 $mapiex = "https://" + "$ExternalURI" + "/mapi"
 Get-MapiVirtualDirectory -Server $Identity | Set-MapiVirtualDirectory -externalurl $mapiex -internalurl $mapiin
- 
+}
+
+if ($exversion -ge 0) {
 #Outlook Anywhere (RPCoverhTTP)
 Get-OutlookAnywhere -Server $Identity | Set-OutlookAnywhere -externalhostname $ExternalURI -internalhostname $InternalURI -ExternalClientsRequireSsl:$true -InternalClientsRequireSsl:$true -ExternalClientAuthenticationMethod $AuthType
- 
+}
+
+if ($exversion -ge 0) {
 #Autodiscover SCP
 $autodiscover = "https://" + "$InternalURI" + "/Autodiscover/Autodiscover.xml"
 Get-ClientAccessService $Identity | Set-ClientAccessService -AutoDiscoverServiceInternalUri $autodiscover
+}
 
 #Output
 write-host "OWA URL:" $owain
